@@ -1,6 +1,6 @@
 module Apps.Config exposing (Config)
 
-import Game.Meta.Types exposing (Context(..))
+import Game.Meta.Context exposing (Context(..))
 
 
 type alias WindowID =

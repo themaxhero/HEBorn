@@ -6,7 +6,7 @@ import Html.Events exposing (onClick)
 import Utils.Html.Attributes exposing (boolAttr)
 import Game.Data exposing (Data)
 import Game.Models as Game
-import Game.Meta.Types exposing (..)
+import Game.Meta.Context exposing (..)
 import Game.Meta.Network as Network
 import Game.Account.Models as Account
 import Game.Account.Bounces.Models as Bounces
