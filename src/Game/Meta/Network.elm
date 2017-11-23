@@ -1,4 +1,4 @@
-module Game.Network.Types exposing (..)
+module Game.Meta.Network exposing (..)
 
 
 type alias IP =
@@ -11,10 +11,6 @@ type alias ID =
 
 type alias NIP =
     ( ID, IP )
-
-
-type alias StringifiedNIP =
-    String
 
 
 toNip : ID -> IP -> NIP
@@ -32,12 +28,12 @@ getIp =
     Tuple.second
 
 
-toString : NIP -> StringifiedNIP
+toString : NIP -> String
 toString ( id, ip ) =
     id ++ "," ++ ip
 
 
-fromString : StringifiedNIP -> NIP
+fromString : String -> NIP
 fromString str =
     case String.split "," str of
         [ id, ip ] ->

@@ -1,6 +1,6 @@
 module Game.Servers.Shared exposing (..)
 
-import Game.Network.Types exposing (NIP)
+import Game.Meta.Network exposing (NIP)
 
 
 type alias Id =

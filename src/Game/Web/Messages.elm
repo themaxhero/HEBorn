@@ -6,7 +6,7 @@ import Game.Servers.Shared as Servers
 import Driver.Websocket.Channels exposing (..)
 import Game.Web.Models exposing (..)
 import Game.Meta.Types exposing (Context(..))
-import Game.Network.Types as Network
+import Game.Meta.Network as Network
 import OS.SessionManager.WindowManager.Models as WM
 
 

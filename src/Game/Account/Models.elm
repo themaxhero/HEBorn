@@ -25,7 +25,7 @@ import Game.Account.Bounces.Models as Bounces
 import Game.Account.Inventory.Models as Inventory
 import Game.Notifications.Models as Notifications
 import Game.Meta.Types exposing (..)
-import Game.Network.Types exposing (NIP)
+import Game.Meta.Network exposing (NIP)
 import Setup.Types as Setup
 
 
