@@ -28,11 +28,11 @@ update config game msg model =
         Validate ->
             onValidate config game model
 
-        Checked True ->
+        Checked Check.Valid ->
             Update.fromModel <| setOkay model
 
-        Checked False ->
-            Update.fromModel model
+        Checked (Check.Invalid msg) ->
+            Update.fromModel <| setError msg model
 
 
 onMainframe : String -> Model -> UpdateResponse msg
@@ -54,7 +54,11 @@ onValidate { toMsg } game model =
         cmd =
             case Maybe.uncurry mainframe hostname of
                 Just ( cid, name ) ->
-                    Check.serverName (Checked >> toMsg) name cid game
+                    Check.serverName
+                        (Checked >> toMsg)
+                        name
+                        cid
+                        game
 
                 Nothing ->
                     Cmd.none

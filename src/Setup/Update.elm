@@ -38,6 +38,9 @@ update game msg model =
         PreviousPage ->
             onPreviousPage game model
 
+        GoToPage page ->
+            onGoToPage game page model
+
         MainframeMsg msg ->
             onMainframeMsg game msg model
 
@@ -90,6 +93,11 @@ onPreviousPage game model =
             locationPickerCmd model_
     in
         ( model_, cmd, Dispatch.none )
+
+
+onGoToPage : Game.Model -> String -> Model -> UpdateResponse
+onGoToPage game page model =
+    Update.fromModel <| goToPage page model
 
 
 

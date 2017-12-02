@@ -12,6 +12,7 @@ import Setup.Pages.Mainframe.Messages as Mainframe
 type Msg
     = NextPage (List Settings)
     | PreviousPage
+    | GoToPage String
     | MainframeMsg Mainframe.Msg
     | PickLocationMsg PickLocation.Msg
     | HandleJoinedAccount Value

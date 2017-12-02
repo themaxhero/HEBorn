@@ -2,7 +2,17 @@ module Setup.Requests.Check exposing (..)
 
 import Native.Panic
 import Core.Error as Error
-import Json.Decode as Decode exposing (Decoder, Value, decodeValue)
+import Json.Decode as Decode
+    exposing
+        ( Decoder
+        , Value
+        , string
+        , succeed
+        , map
+        , fail
+        , field
+        , decodeValue
+        )
 import Json.Encode as Encode
 import Requests.Requests as Requests
 import Requests.Topics as Topics
@@ -12,10 +22,21 @@ import Utils.Ports.Map exposing (Coordinates)
 import Setup.Settings exposing (..)
 
 
+type Response
+    = Valid
+    | Invalid (Maybe String)
+
+
+
 {- This is a meta/multi request module, use it to build custom requests -}
 
 
-serverName : (Bool -> msg) -> String -> CId -> ConfigSource a -> Cmd msg
+serverName :
+    (Response -> msg)
+    -> String
+    -> CId
+    -> ConfigSource a
+    -> Cmd msg
 serverName func name cid =
     name
         |> Name
@@ -52,17 +73,30 @@ encodeKV ( key, value ) =
         ]
 
 
-receiveServerName : Code -> Value -> Bool
+receiveServerName : Code -> Value -> Response
 receiveServerName code value =
-    case code of
-        OkCode ->
-            True
+    let
+        msgError =
+            case decodeValue decodeError value of
+                Ok (Invalid (Just str)) ->
+                    Invalid (Just str)
 
-        _ ->
-            -- note that we're catching every error code, we should define
-            -- the correct error code for expected errors and crash with
-            -- the others
-            False
+                Err msg ->
+                    "Could not decode error message"
+                        |> Error.impossible
+                        |> Native.Panic.crash
+
+                _ ->
+                    "Unknown Error Message"
+                        |> Error.impossible
+                        |> Native.Panic.crash
+    in
+        case code of
+            OkCode ->
+                Valid
+
+            _ ->
+                msgError
 
 
 receiveServerLocation : Code -> Value -> Maybe String
@@ -83,4 +117,22 @@ receiveServerLocation code value =
 
 decodeLocation : Decoder String
 decodeLocation =
-    Decode.field "address" Decode.string
+    field "address" string
+
+
+decodeError : Decoder Response
+decodeError =
+    let
+        decodedField =
+            string
+                |> field "message"
+
+        decodeError_ field =
+            case field of
+                "hostname_invalid" ->
+                    Invalid <| Just "hostname_invalid"
+
+                _ ->
+                    Invalid Nothing
+    in
+        map decodeError_ decodedField

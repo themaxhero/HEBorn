@@ -3,6 +3,8 @@ module Setup.Requests.Setup exposing (Response(..), request, receive)
 import Requests.Requests as Requests
 import Requests.Topics as Topics
 import Json.Encode as Encode exposing (Value)
+import Json.Decode as Decode
+import Decoders.Setup exposing (..)
 import Requests.Types exposing (ConfigSource, Code(..))
 import Setup.Messages exposing (..)
 import Setup.Models exposing (..)

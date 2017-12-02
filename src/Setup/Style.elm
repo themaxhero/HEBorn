@@ -31,6 +31,10 @@ css =
             ]
         , class Selected
             [ fontWeight bold ]
+        , class DonePage
+            [ color Color.green ]
+        , class BadPage
+            [ color Color.red ]
         ]
 
 
