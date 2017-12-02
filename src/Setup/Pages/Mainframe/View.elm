@@ -1,10 +1,30 @@
 module Setup.Pages.Mainframe.View exposing (view)
 
 import Html exposing (..)
-import Html.Events exposing (onClick, onInput, onBlur)
-import Html.Attributes exposing (placeholder, disabled)
+import Html.Events exposing (..)
+import Html.Attributes
+    exposing
+        ( placeholder
+        , value
+        , disabled
+        , style
+        , type_
+        , name
+        )
 import Html.CssHelpers
+import Css
+    exposing
+        ( border2
+        , border3
+        , px
+        , color
+        , solid
+        , rgb
+        , paddingLeft
+        , marginLeft
+        )
 import Game.Models as Game
+import Json.Decode as Decode
 import Setup.Resources exposing (..)
 import Setup.Settings as Settings exposing (Settings)
 import Setup.Pages.Helpers exposing (withHeader)
@@ -19,33 +39,119 @@ import Setup.Pages.Mainframe.Config exposing (..)
 
 view : Config msg -> Game.Model -> Model -> Html msg
 view { toMsg, onNext, onPrevious } game model =
-    withHeader [ class [ StepWelcome ] ]
-        [ div [] [ h2 [] [ text "Initial server name:" ] ]
-        , hostnameInput toMsg model
-        , div []
-            [ button [ onClick onPrevious ] [ text "BACK" ]
-            , nextBtn onNext model
+    let
+        errorStyle =
+            styles
+                [ color (rgb 255 0 0)
+                , paddingLeft (px 5)
+                ]
+
+        errorToString =
+            case model.error of
+                InvalidHostname ->
+                    "Hostname is invalid"
+
+                _ ->
+                    ""
+
+        formAttribs =
+            if okayCondition model then
+                [ onSubmit <| goNext ]
+            else
+                [ onSubmit <| toMsg Validate ]
+
+        goNext =
+            onNext <| settings model
+
+        error =
+            if hasErrorMsg model then
+                span [ errorStyle ] [ text errorToString ]
+            else
+                span [] [ text " " ]
+    in
+        withHeader [ class [ StepWelcome ] ]
+            [ div []
+                [ h2 []
+                    [ text "Initial server name:" ]
+                ]
+            , Html.form formAttribs
+                [ hostnameInput onNext toMsg model
+                , error
+                , div []
+                    [ input [ type_ "button", value "BACK", onClick onPrevious ] []
+                    , nextBtn onNext toMsg model
+                    ]
+                ]
             ]
-        ]
 
 
-hostnameInput : (Msg -> msg) -> Model -> Html msg
-hostnameInput toMsg model =
-    input
-        [ onInput <| Mainframe >> toMsg
-        , onBlur <| toMsg Validate
-        , placeholder "hostname"
-        ]
-        [ text <| Maybe.withDefault "" model.hostname ]
+hostnameInput : (List Settings -> msg) -> (Msg -> msg) -> Model -> Html msg
+hostnameInput onNext toMsg model =
+    let
+        hostName =
+            Maybe.withDefault "" (model.hostname)
+
+        --goNext =
+        --    onNext <| settings model
+        okayBorder =
+            styles
+                [ border3 (px 1) solid (rgb 0 255 0)
+                , marginLeft (px 10)
+                ]
+
+        errorBorder =
+            styles
+                [ border3 (px 1) solid (rgb 255 0 0)
+                , marginLeft (px 10)
+                ]
+
+        attrs =
+            if okayCondition model then
+                [ onInput <| Mainframe >> toMsg --
+                , onBlur <| toMsg Validate
+                , placeholder "hostname"
+                , value hostName
+                , okayBorder
+                ]
+            else if errorCondition model then
+                [ onInput <| Mainframe >> toMsg
+                , onBlur <| toMsg Validate
+                , placeholder "hostname"
+                , value hostName
+                , errorBorder
+                ]
+            else
+                [ onInput <| Mainframe >> toMsg
+                , onBlur <| toMsg Validate
+                , placeholder "hostname"
+                , value hostName
+                , styles [ border2 (px 1) solid, marginLeft (px 10) ]
+                ]
+    in
+        input
+            attrs
+            []
 
 
-nextBtn : (List Settings -> msg) -> Model -> Html msg
-nextBtn onNext model =
+nextBtn : (List Settings -> msg) -> (Msg -> msg) -> Model -> Html msg
+nextBtn onNext toMsg model =
     let
         attrs =
-            if isOkay model then
-                [ onClick <| onNext <| settings model ]
-            else
-                [ disabled True ]
+            [ type_ "submit", value "NEXT" ]
     in
-        button attrs [ text "NEXT" ]
+        input attrs []
+
+
+styles : List Css.Style -> Attribute msg
+styles =
+    Css.asPairs >> style
+
+
+okayCondition : Model -> Bool
+okayCondition model =
+    (isOkay model) && not (hasErrorMsg model)
+
+
+errorCondition : Model -> Bool
+errorCondition model =
+    (hasErrorMsg model) && not (isOkay model)
