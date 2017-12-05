@@ -13,6 +13,16 @@ white =
     hex "FFF"
 
 
+green : Color
+green =
+    hex "0F0"
+
+
+red : Color
+red =
+    hex "F00"
+
+
 localhost : Color
 localhost =
     hex "56822E"

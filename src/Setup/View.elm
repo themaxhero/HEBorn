@@ -2,6 +2,7 @@ module Setup.View exposing (view)
 
 import Game.Models as Game
 import Html exposing (..)
+import Html.Events exposing (..)
 import Html.CssHelpers
 import Setup.Messages exposing (..)
 import Setup.Models exposing (..)
@@ -44,23 +45,23 @@ setupView : Game.Model -> PageModel -> Model -> Html Msg
 setupView game page model =
     node setupNode
         []
-        [ leftBar page model.pages
+        [ leftBar page model.pages model
         , viewPage game page
         ]
 
 
-leftBar : PageModel -> List String -> Html Msg
-leftBar current others =
+leftBar : PageModel -> List String -> Model -> Html Msg
+leftBar current others model =
     let
         currentPageName =
             pageModelToString current
 
         mapMarker =
-            stepMarker currentPageName
+            flip <| stepMarker currentPageName
     in
         node leftBarNode
             []
-            [ ul [] <| List.map mapMarker others
+            [ ul [] <| List.map (mapMarker model) others
             ]
 
 
@@ -90,13 +91,27 @@ viewPage game page =
             CustomFinish.view Configs.finish
 
 
-stepMarker : String -> String -> Html Msg
-stepMarker active other =
+stepMarker : String -> String -> Model -> Html Msg
+stepMarker active other model =
     let
         isSelected =
             if active == other then
-                [ class [ Selected ] ]
+                [ Selected ]
             else
                 []
+
+        pageColor =
+            if hasBadPages model then
+                if (isBadPage other model) then
+                    [ BadPage ]
+                else
+                    [ DonePage ]
+            else
+                []
+
+        attributes =
+            [ class (isSelected ++ pageColor)
+            , onClick <| GoToPage other
+            ]
     in
-        li isSelected [ text other ]
+        li attributes [ text other ]

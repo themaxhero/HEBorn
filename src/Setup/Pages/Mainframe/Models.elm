@@ -6,13 +6,13 @@ import Setup.Settings as Settings exposing (Settings)
 type alias Model =
     { hostname : Maybe String
     , okay : Bool
-    , error : Error
+    , error : Maybe Error
     }
 
 
 type Error
     = InvalidHostname
-    | None
+    | Unknown
 
 
 settings : Model -> List Settings
@@ -29,7 +29,7 @@ initialModel : Model
 initialModel =
     { hostname = Nothing
     , okay = False
-    , error = None
+    , error = Nothing
     }
 
 
@@ -53,9 +53,19 @@ isOkay =
 
 setOkay : Model -> Model
 setOkay model =
-    { model | okay = True, error = None }
+    { model | okay = True, error = Nothing }
 
 
 hasErrorMsg : Model -> Bool
 hasErrorMsg model =
-    (model.error /= None)
+    (model.error /= Nothing)
+
+
+setError : Maybe String -> Model -> Model
+setError error model =
+    case error of
+        Just "hostname_invalid" ->
+            { model | error = Just InvalidHostname }
+
+        _ ->
+            { model | error = Just Unknown }

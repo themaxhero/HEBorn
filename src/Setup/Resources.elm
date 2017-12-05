@@ -7,6 +7,8 @@ type Class
     | StepChooseTheme
     | StepFinish
     | Selected
+    | DonePage
+    | BadPage
 
 
 prefix : String

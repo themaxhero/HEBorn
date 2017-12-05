@@ -20,14 +20,11 @@ import Requests.Types exposing (ConfigSource, Code(..), ResponseType)
 import Game.Servers.Shared exposing (CId)
 import Utils.Ports.Map exposing (Coordinates)
 import Setup.Settings exposing (..)
-import Game.Models as Game
-import Setup.Pages.Mainframe.Models as Mainframe
-import Setup.Pages.Mainframe.Messages as Mainframe
 
 
-type MsgCheck
-    = Invalid (Maybe String)
-    | Valid Bool
+type Response
+    = Valid
+    | Invalid (Maybe String)
 
 
 
@@ -35,7 +32,7 @@ type MsgCheck
 
 
 serverName :
-    (MsgCheck -> msg)
+    (Response -> msg)
     -> String
     -> CId
     -> ConfigSource a
@@ -76,7 +73,7 @@ encodeKV ( key, value ) =
         ]
 
 
-receiveServerName : Code -> Value -> MsgCheck
+receiveServerName : Code -> Value -> Response
 receiveServerName code value =
     let
         msgError =
@@ -96,7 +93,7 @@ receiveServerName code value =
     in
         case code of
             OkCode ->
-                Valid True
+                Valid
 
             _ ->
                 msgError
@@ -123,7 +120,7 @@ decodeLocation =
     field "address" string
 
 
-decodeError : Decoder MsgCheck
+decodeError : Decoder Response
 decodeError =
     let
         decodedField =

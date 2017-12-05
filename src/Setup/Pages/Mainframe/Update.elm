@@ -28,27 +28,11 @@ update config game msg model =
         Validate ->
             onValidate config game model
 
-        Error str ->
-            case str of
-                "hostname_invalid" ->
-                    let
-                        model_ =
-                            { model | error = InvalidHostname }
-                    in
-                        Update.fromModel model_
-
-                _ ->
-                    let
-                        model_ =
-                            { model | error = None }
-                    in
-                        Update.fromModel model_
-
-        Checked True ->
+        Checked Check.Valid ->
             Update.fromModel <| setOkay model
 
-        Checked False ->
-            Update.fromModel model
+        Checked (Check.Invalid msg) ->
+            Update.fromModel <| setError msg model
 
 
 onMainframe : String -> Model -> UpdateResponse msg
@@ -71,7 +55,7 @@ onValidate { toMsg } game model =
             case Maybe.uncurry mainframe hostname of
                 Just ( cid, name ) ->
                     Check.serverName
-                        (handleMsg >> toMsg)
+                        (Checked >> toMsg)
                         name
                         cid
                         game
@@ -80,13 +64,3 @@ onValidate { toMsg } game model =
                     Cmd.none
     in
         ( model, cmd, Dispatch.none )
-
-
-handleMsg : Check.MsgCheck -> Msg
-handleMsg msg =
-    case msg of
-        Check.Valid bool ->
-            Checked bool
-
-        Check.Invalid str ->
-            Error (Maybe.withDefault "" str)

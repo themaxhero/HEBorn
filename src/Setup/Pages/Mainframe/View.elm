@@ -48,7 +48,7 @@ view { toMsg, onNext, onPrevious } game model =
 
         errorToString =
             case model.error of
-                InvalidHostname ->
+                Just InvalidHostname ->
                     "Hostname is invalid"
 
                 _ ->
@@ -91,42 +91,27 @@ hostnameInput onNext toMsg model =
         hostName =
             Maybe.withDefault "" (model.hostname)
 
-        --goNext =
-        --    onNext <| settings model
-        okayBorder =
-            styles
-                [ border3 (px 1) solid (rgb 0 255 0)
-                , marginLeft (px 10)
-                ]
-
-        errorBorder =
-            styles
-                [ border3 (px 1) solid (rgb 255 0 0)
-                , marginLeft (px 10)
-                ]
+        statusAttr =
+            if okayCondition model then
+                styles
+                    [ border3 (px 1) solid (rgb 0 255 0)
+                    , marginLeft (px 10)
+                    ]
+            else if errorCondition model then
+                styles
+                    [ border3 (px 1) solid (rgb 255 0 0)
+                    , marginLeft (px 10)
+                    ]
+            else
+                styles [ border2 (px 1) solid, marginLeft (px 10) ]
 
         attrs =
-            if okayCondition model then
-                [ onInput <| Mainframe >> toMsg --
-                , onBlur <| toMsg Validate
-                , placeholder "hostname"
-                , value hostName
-                , okayBorder
-                ]
-            else if errorCondition model then
-                [ onInput <| Mainframe >> toMsg
-                , onBlur <| toMsg Validate
-                , placeholder "hostname"
-                , value hostName
-                , errorBorder
-                ]
-            else
-                [ onInput <| Mainframe >> toMsg
-                , onBlur <| toMsg Validate
-                , placeholder "hostname"
-                , value hostName
-                , styles [ border2 (px 1) solid, marginLeft (px 10) ]
-                ]
+            [ onInput <| Mainframe >> toMsg --
+            , onBlur <| toMsg Validate
+            , placeholder "hostname"
+            , value hostName
+            , statusAttr
+            ]
     in
         input
             attrs

@@ -4,6 +4,9 @@ import Dict as Dict
 import Game.Models as Game
 import Json.Encode as Encode exposing (Value)
 import Core.Dispatch as Dispatch exposing (Dispatch)
+import Core.Error as Error
+import Utils.Core exposing (repeat)
+import Utils.List exposing (findIndex)
 import Setup.Types exposing (..)
 import Setup.Messages exposing (Msg)
 import Setup.Settings as Settings exposing (Settings)
@@ -15,7 +18,7 @@ type alias Model =
     { page : Maybe PageModel
     , pages : List String
     , badPages : List String
-    , remaining : List PageModel
+    , remaining : RemainingPages
     , done : PagesDone
     , isLoading : Bool
     , topicsDone : TopicsDone
@@ -33,6 +36,10 @@ type PageModel
 
 
 type alias PagesDone =
+    List ( PageModel, List Settings )
+
+
+type alias RemainingPages =
     List ( PageModel, List Settings )
 
 
@@ -117,7 +124,7 @@ initialModel game =
             { page = Nothing
             , pages = []
             , badPages = []
-            , remaining = []
+            , remaining = Nothing
             , done = []
             , isLoading = True
             , topicsDone = initialTopicsDone
@@ -346,3 +353,71 @@ encodePageModel page =
 noTopicsRemaining : Model -> Bool
 noTopicsRemaining { topicsDone } =
     topicsDone.server
+
+
+hasBadPages : Model -> Bool
+hasBadPages model =
+    not <| List.isEmpty model.badPages
+
+
+isBadPage : String -> Model -> Bool
+isBadPage page model =
+    List.member page model.badPages
+
+
+goToPage : String -> Model -> Model
+goToPage newPage model =
+    let
+        pageName =
+            case model.page of
+                Just page ->
+                    pageModelToString page
+
+                Nothing ->
+                    ""
+
+        currentIndex =
+            case findIndex ((==) pageName) model.pages of
+                Just index ->
+                    index
+
+                Nothing ->
+                    "Current page not found"
+                        |> Error.impossible
+                        |> uncurry Native.Panic.crash
+
+        nextPageIndex =
+            case findIndex ((==) newPage) model.pages of
+                Just index ->
+                    index
+
+                Nothing ->
+                    "Next page not found"
+                        |> Error.impossible
+                        |> uncurry Native.Panic.crash
+
+        nextPage_ =
+            (currentIndex - nextPageIndex)
+
+        settings =
+            case model.page of
+                Just page ->
+                    case page of
+                        MainframeModel model_ ->
+                            Mainframe.settings model_
+
+                        PickLocationModel model_ ->
+                            PickLocation.settings model_
+
+                        _ ->
+                            []
+
+                Nothing ->
+                    []
+    in
+        if nextPage_ > 0 then
+            repeat nextPage_ (nextPage settings) model
+        else if nextPage_ < 0 then
+            repeat (abs nextPage_) previousPage model
+        else
+            model
