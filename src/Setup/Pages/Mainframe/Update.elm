@@ -28,6 +28,9 @@ update config game msg model =
         Validate ->
             onValidate config game model
 
+        SetError error ->
+            onSetError error model
+
         Checked Check.Valid ->
             Update.fromModel <| setOkay model
 
@@ -64,3 +67,12 @@ onValidate { toMsg } game model =
                     Cmd.none
     in
         ( model, cmd, Dispatch.none )
+
+
+onSetError : String -> Model -> UpdateResponse msg
+onSetError error model =
+    let
+        model_ =
+            setError (Just error) model
+    in
+        Update.fromModel model_

@@ -5,6 +5,7 @@ module Setup.Requests.SetServer
         , receive
         )
 
+import Dict exposing (Dict)
 import Json.Decode as Decode exposing (Value)
 import Json.Encode as Encode
 import Requests.Requests as Requests
@@ -13,10 +14,11 @@ import Requests.Types exposing (ResponseType, ConfigSource, Code(..))
 import Game.Servers.Shared as Servers
 import Setup.Settings exposing (..)
 import Setup.Messages exposing (..)
+import Setup.Models exposing (..)
 
 
 type alias Response =
-    List Settings
+    Dict String String
 
 
 request : List Settings -> Servers.CId -> ConfigSource a -> Cmd Msg
@@ -30,12 +32,12 @@ receive : List Settings -> Code -> Value -> Maybe Response
 receive settings code value =
     case code of
         OkCode ->
-            Just []
+            Just Dict.empty
 
         _ ->
             case Decode.decodeValue (decodeErrors settings) value of
-                Ok settings ->
-                    Just settings
+                Ok list ->
+                    Just list
 
                 Err _ ->
-                    Just settings
+                    Nothing

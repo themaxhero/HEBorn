@@ -1,8 +1,9 @@
 module Setup.Update exposing (update)
 
+import Set as Set exposing (Set)
+import Dict exposing (Dict)
 import Json.Decode as Decode exposing (Value)
 import Utils.Update as Update
-import Core.Messages as Core
 import Core.Dispatch as Dispatch exposing (Dispatch)
 import Core.Dispatch.Core as Core
 import Core.Error as Error
@@ -18,6 +19,7 @@ import Setup.Settings as Settings exposing (Settings)
 import Setup.Pages.Configs as Configs
 import Setup.Pages.PickLocation.Update as PickLocation
 import Setup.Pages.PickLocation.Messages as PickLocation
+import Setup.Pages.Mainframe.Models as Mainframe
 import Setup.Pages.Mainframe.Update as Mainframe
 import Setup.Pages.Mainframe.Messages as Mainframe
 import Setup.Requests.Setup as Setup
@@ -70,16 +72,23 @@ update game msg model =
 onNextPage : Game.Model -> List Settings -> Model -> UpdateResponse
 onNextPage game settings model0 =
     let
+        model1 =
+            insertGoodPage model0
+
         model =
-            nextPage settings model0
+            nextPage settings model1
     in
-        if doneSetup model then
-            let
-                ( model_, cmd ) =
-                    setRequest game model
-            in
-                ( model_, cmd, Dispatch.none )
+        if setupOkay model then
+            if doneSetup model then
+                let
+                    ( model_, cmd ) =
+                        setRequest game model
+                in
+                    ( model_, cmd, Dispatch.none )
+            else
+                ( model, Cmd.none, Dispatch.none )
         else
+            -- Second Grand Phase
             ( model, Cmd.none, Dispatch.none )
 
 
@@ -107,7 +116,7 @@ onGoToPage game page model =
 onMainframeMsg : Game.Model -> Mainframe.Msg -> Model -> UpdateResponse
 onMainframeMsg game msg model =
     case model.page of
-        Just (MainframeModel page) ->
+        ( Just (MainframeModel page), _ ) ->
             let
                 ( page_, cmd_, dispatch ) =
                     Mainframe.update Configs.setMainframeName game msg page
@@ -124,7 +133,7 @@ onMainframeMsg game msg model =
 onPickLocationMsg : Game.Model -> PickLocation.Msg -> Model -> UpdateResponse
 onPickLocationMsg game msg model =
     case model.page of
-        Just (PickLocationModel page) ->
+        ( Just (PickLocationModel page), _ ) ->
             let
                 ( page_, cmd_, dispatch ) =
                     PickLocation.update Configs.pickLocation game msg page
@@ -155,38 +164,70 @@ updateRequest game response model =
             Update.fromModel model
 
 
-onGenericSet : Game.Model -> List Settings -> Model -> UpdateResponse
-onGenericSet game list model =
+onGenericSet : Game.Model -> Dict String String -> Model -> UpdateResponse
+onGenericSet game dict model =
     let
-        model_ =
-            setTopicsDone Settings.ServerTopic True model
-    in
-        if List.isEmpty list && noTopicsRemaining model_ then
+        reducer ( page, settings ) ( newDone, badPages ) =
             let
-                id =
-                    game
-                        |> Game.getAccount
-                        |> Account.getId
-            in
-                ( model_
-                , Setup.request (List.map Tuple.first model.done) id game
-                , Dispatch.none
-                )
-        else
-            let
-                noErrors =
-                    flip List.member list >> not
+                ( newDone_, badPages_ ) =
+                    ( newDone ++ [ ( page, settings ) ], badPage )
 
-                keepBadPages ( model, settings ) =
-                    if List.all noErrors settings then
-                        Nothing
+                hasBadPage =
+                    Tuple.second (List.foldl reducer_ ( page, False ) settings)
+
+                badPage =
+                    if hasBadPage then
+                        badPages ++ [ pageModelToString page ]
                     else
-                        Just <| pageModelToString model
+                        badPages
             in
-                model_
-                    |> setBadPages (List.filterMap keepBadPages model.done)
-                    |> undoPages
-                    |> Update.fromModel
+                ( newDone_, badPages_ )
+
+        reducer_ setting ( pageModel, isBad ) =
+            case Dict.get (Settings.settingToString setting) dict of
+                Just errorString ->
+                    let
+                        page_ =
+                            case pageModel of
+                                MainframeModel model ->
+                                    onMainframeModel game errorString model
+
+                                PickLocationModel model ->
+                                    PickLocationModel model
+
+                                _ ->
+                                    pageModel
+                    in
+                        ( page_, True )
+
+                Nothing ->
+                    ( pageModel, False )
+
+        ( done, badPages ) =
+            List.foldl reducer ( [], [] ) model.done
+
+        model_ =
+            { model
+                | done = done
+            }
+    in
+        model_
+            |> setBadPages badPages
+            |> undoPages
+            |> Update.fromModel
+
+
+onMainframeModel : Game.Model -> String -> Mainframe.Model -> PageModel
+onMainframeModel game error model =
+    let
+        ( model_, cmd, dispatch ) =
+            let
+                msg =
+                    Mainframe.SetError error
+            in
+                Mainframe.update Configs.setMainframeName game msg model
+    in
+        MainframeModel model_
 
 
 onSetup : Game.Model -> Setup.Response -> Model -> UpdateResponse
@@ -259,7 +300,7 @@ handleJoinedServer game cid model =
 locationPickerCmd : Model -> Cmd Msg
 locationPickerCmd model =
     case model.page of
-        Just (PickLocationModel _) ->
+        ( Just (PickLocationModel _), _ ) ->
             Cmd.batch
                 [ Map.mapInit mapId
                 , geoLocReq geoInstance
@@ -267,6 +308,25 @@ locationPickerCmd model =
 
         _ ->
             Cmd.none
+
+
+setSecondPhase : Game.Model -> Model -> UpdateResponse
+setSecondPhase game model =
+    let
+        page =
+            getPageFromDone model.done model
+
+        remaining =
+            Maybe.withDefault [] <| List.tail model.done
+
+        model_ =
+            { model
+                | remaining = remaining
+                , page = page
+                , secondPhase = True
+            }
+    in
+        ( model_, Cmd.none, Dispatch.none )
 
 
 setRequest : Game.Model -> Model -> ( Model, Cmd Msg )

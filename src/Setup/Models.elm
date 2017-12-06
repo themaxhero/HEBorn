@@ -1,6 +1,7 @@
 module Setup.Models exposing (..)
 
 import Dict as Dict
+import Set as Set exposing (Set)
 import Game.Models as Game
 import Json.Encode as Encode exposing (Value)
 import Core.Dispatch as Dispatch exposing (Dispatch)
@@ -15,13 +16,15 @@ import Setup.Pages.Mainframe.Models as Mainframe
 
 
 type alias Model =
-    { page : Maybe PageModel
+    { page : CurrentPage
     , pages : List String
-    , badPages : List String
+    , badPages : Set String
     , remaining : RemainingPages
     , done : PagesDone
     , isLoading : Bool
+    , secondPhase : Bool
     , topicsDone : TopicsDone
+    , goodPages : Set String
     }
 
 
@@ -33,6 +36,16 @@ type PageModel
     | ChooseThemeModel
     | FinishModel
     | CustomFinishModel
+
+
+type PageError
+    = MainframeError Mainframe.Error
+    | PickLocationError PickLocation.Error
+    | UnknownError
+
+
+type alias CurrentPage =
+    ( Maybe PageModel, Maybe (List Settings) )
 
 
 type alias PagesDone =
@@ -121,12 +134,14 @@ initialModel : Game.Model -> ( Model, Cmd Msg, Dispatch )
 initialModel game =
     let
         model =
-            { page = Nothing
+            { page = ( Nothing, Nothing )
             , pages = []
-            , badPages = []
-            , remaining = Nothing
+            , badPages = Set.empty
+            , goodPages = Set.empty
+            , remaining = []
             , done = []
             , isLoading = True
+            , secondPhase = False
             , topicsDone = initialTopicsDone
             }
     in
@@ -147,10 +162,10 @@ doneLoading model =
 doneSetup : Model -> Bool
 doneSetup model =
     case model.page of
-        Just _ ->
+        ( Just _, _ ) ->
             False
 
-        Nothing ->
+        ( Nothing, _ ) ->
             List.isEmpty model.remaining
 
 
@@ -167,29 +182,42 @@ hasPages =
 setPages : Pages -> Model -> Model
 setPages pages model =
     let
+        mapper item =
+            ( item, [] )
+
         models =
             initializePages pages
+                |> List.map mapper
+
+        pages_ =
+            List.map pageModelToString <| initializePages pages
 
         remaining =
             models
                 |> List.tail
                 |> Maybe.withDefault []
+
+        page =
+            models
+                |> List.head
+                |> Maybe.andThen (doneToCurrent)
+                |> Maybe.withDefault ( Just WelcomeModel, Nothing )
     in
         { model
-            | pages = List.map pageModelToString models
-            , page = List.head models
+            | pages = pages_
+            , page = page
             , remaining = remaining
         }
 
 
 setBadPages : List String -> Model -> Model
 setBadPages pages model =
-    { model | badPages = pages }
+    { model | badPages = Set.fromList pages }
 
 
 setPage : PageModel -> Model -> Model
 setPage page model =
-    { model | page = Just page }
+    { model | page = ( Just page, Nothing ) }
 
 
 getDone : Model -> PagesDone
@@ -210,8 +238,8 @@ setTopicsDone setting value ({ topicsDone } as model) =
 nextPage : List Settings -> Model -> Model
 nextPage settings model =
     let
-        current =
-            List.head model.remaining
+        page =
+            getPageFromRemaining model.remaining model
 
         remaining =
             model.remaining
@@ -220,15 +248,15 @@ nextPage settings model =
 
         done =
             case model.page of
-                Just page ->
+                ( Just page, _ ) ->
                     ( page, settings ) :: model.done
 
-                Nothing ->
+                ( Nothing, _ ) ->
                     model.done
 
         model_ =
             { model
-                | page = current
+                | page = page
                 , remaining = remaining
                 , done = done
             }
@@ -242,10 +270,8 @@ previousPage model =
         pagesDone =
             getDone model
 
-        current =
-            pagesDone
-                |> List.head
-                |> Maybe.map Tuple.first
+        page =
+            getPageFromDone model.done model
 
         done =
             pagesDone
@@ -254,15 +280,18 @@ previousPage model =
 
         remaining =
             case model.page of
-                Just page ->
-                    page :: model.remaining
+                ( Just page, Just settings ) ->
+                    ( page, settings ) :: model.remaining
 
-                Nothing ->
+                ( Just page, Nothing ) ->
+                    ( page, [] ) :: model.remaining
+
+                ( Nothing, _ ) ->
                     model.remaining
 
         model_ =
             { model
-                | page = current
+                | page = page
                 , remaining = remaining
                 , done = done
             }
@@ -275,14 +304,28 @@ undoPages model =
     let
         pages =
             getDone model
-                |> List.map Tuple.first
                 |> List.reverse
+
+        remaining =
+            pages
+                |> List.head
+                |> Maybe.andThen (flip (::) model.remaining >> Just)
+                |> Maybe.withDefault model.remaining
+
+        page =
+            pages
+                |> List.head
+                |> Maybe.andThen (doneToCurrent)
+                |> Maybe.withDefault ( Just WelcomeModel, Just [] )
+
+        model_ =
+            { model
+                | done = []
+                , page = page
+                , remaining = remaining
+            }
     in
-        { model
-            | done = []
-            , page = List.head pages
-            , remaining = List.drop 1 pages
-        }
+        model_
 
 
 pageModelToString : PageModel -> String
@@ -308,6 +351,64 @@ pageModelToString page =
 
         CustomFinishModel ->
             "FINISH"
+
+
+getPageFromRemaining : RemainingPages -> Model -> CurrentPage
+getPageFromRemaining remaining model =
+    let
+        head =
+            List.head remaining
+
+        badPage page =
+            (pageModelToString >> isBadPage) page model
+
+        newPage page settings =
+            ( Just page, Just settings )
+
+        newRemaining =
+            Maybe.withDefault [] <| List.tail remaining
+    in
+        case head of
+            Just ( page, settings ) ->
+                if model.secondPhase then
+                    if (badPage page) then
+                        newPage page settings
+                    else
+                        getPageFromRemaining newRemaining model
+                else
+                    newPage page settings
+
+            Nothing ->
+                ( Nothing, Nothing )
+
+
+getPageFromDone : PagesDone -> Model -> CurrentPage
+getPageFromDone done model =
+    let
+        head =
+            List.head done
+
+        badPage page =
+            (pageModelToString >> isBadPage) page model
+
+        newPage page settings =
+            ( Just page, Just settings )
+
+        newDone =
+            Maybe.withDefault [] <| List.tail done
+    in
+        case head of
+            Just ( page, settings ) ->
+                if model.secondPhase then
+                    if (badPage page) then
+                        newPage page settings
+                    else
+                        getPageFromRemaining newDone model
+                else
+                    newPage page settings
+
+            Nothing ->
+                ( Nothing, Nothing )
 
 
 encodeDone : List PageModel -> List Value
@@ -357,12 +458,48 @@ noTopicsRemaining { topicsDone } =
 
 hasBadPages : Model -> Bool
 hasBadPages model =
-    not <| List.isEmpty model.badPages
+    not <| Set.isEmpty model.badPages
 
 
 isBadPage : String -> Model -> Bool
 isBadPage page model =
-    List.member page model.badPages
+    Set.member page model.badPages
+
+
+isGoodPage : String -> Model -> Bool
+isGoodPage page model =
+    Set.member page model.goodPages
+
+
+insertGoodPage : Model -> Model
+insertGoodPage model =
+    let
+        operation =
+            pageModelToString
+                >> (flip Set.insert) model.goodPages
+
+        list =
+            case model.page of
+                ( Just page, _ ) ->
+                    operation page
+
+                ( Nothing, _ ) ->
+                    model.goodPages
+
+        model_ =
+            { model | goodPages = list }
+    in
+        model_
+
+
+setupOkay : Model -> Bool
+setupOkay model =
+    (not <| hasBadPages model) && (not <| Set.isEmpty model.goodPages)
+
+
+doneToCurrent : ( PageModel, List Settings ) -> Maybe CurrentPage
+doneToCurrent ( item, list ) =
+    Just ( Just item, Just list )
 
 
 goToPage : String -> Model -> Model
@@ -370,10 +507,10 @@ goToPage newPage model =
     let
         pageName =
             case model.page of
-                Just page ->
+                ( Just page, _ ) ->
                     pageModelToString page
 
-                Nothing ->
+                ( Nothing, _ ) ->
                     ""
 
         currentIndex =
@@ -397,22 +534,17 @@ goToPage newPage model =
                         |> uncurry Native.Panic.crash
 
         nextPage_ =
-            (currentIndex - nextPageIndex)
+            (nextPageIndex - currentIndex)
 
         settings =
             case model.page of
-                Just page ->
-                    case page of
-                        MainframeModel model_ ->
-                            Mainframe.settings model_
+                ( Just page, Just settings ) ->
+                    settings
 
-                        PickLocationModel model_ ->
-                            PickLocation.settings model_
+                ( Just page, Nothing ) ->
+                    []
 
-                        _ ->
-                            []
-
-                Nothing ->
+                ( Nothing, _ ) ->
                     []
     in
         if nextPage_ > 0 then
