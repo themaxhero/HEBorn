@@ -107,7 +107,7 @@ onGoToPage game page model =
 onMainframeMsg : Game.Model -> Mainframe.Msg -> Model -> UpdateResponse
 onMainframeMsg game msg model =
     case model.page of
-        Just (MainframeModel page) ->
+        ( Just (MainframeModel page), _ ) ->
             let
                 ( page_, cmd_, dispatch ) =
                     Mainframe.update Configs.setMainframeName game msg page
@@ -124,7 +124,7 @@ onMainframeMsg game msg model =
 onPickLocationMsg : Game.Model -> PickLocation.Msg -> Model -> UpdateResponse
 onPickLocationMsg game msg model =
     case model.page of
-        Just (PickLocationModel page) ->
+        ( Just (PickLocationModel page), _ ) ->
             let
                 ( page_, cmd_, dispatch ) =
                     PickLocation.update Configs.pickLocation game msg page
@@ -259,7 +259,7 @@ handleJoinedServer game cid model =
 locationPickerCmd : Model -> Cmd Msg
 locationPickerCmd model =
     case model.page of
-        Just (PickLocationModel _) ->
+        ( Just (PickLocationModel _), _ ) ->
             Cmd.batch
                 [ Map.mapInit mapId
                 , geoLocReq geoInstance

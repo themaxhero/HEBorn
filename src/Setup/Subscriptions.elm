@@ -11,7 +11,7 @@ import Setup.Pages.PickLocation.Subscriptions as PickLocation
 subscriptions : Model -> Sub Msg
 subscriptions model =
     case model.page of
-        Just (PickLocationModel model) ->
+        ( Just (PickLocationModel model), _ ) ->
             PickLocation.subscriptions Configs.pickLocation model
 
         _ ->

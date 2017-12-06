@@ -26,10 +26,10 @@ view game model =
         loadingView
     else
         case model.page of
-            Just page ->
+            ( Just page, _ ) ->
                 setupView game page model
 
-            Nothing ->
+            ( Nothing, _ ) ->
                 loadingView
 
 
