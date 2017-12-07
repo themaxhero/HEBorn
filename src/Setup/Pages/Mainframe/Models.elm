@@ -69,3 +69,23 @@ setError error model =
 
         _ ->
             { model | error = Just Unknown }
+
+
+okayCondition : Model -> Bool
+okayCondition model =
+    (isOkay model) && not (hasErrorMsg model)
+
+
+errorCondition : Model -> Bool
+errorCondition model =
+    (hasErrorMsg model) && not (isOkay model)
+
+
+inputColorCondition : Model -> Maybe Bool
+inputColorCondition model =
+    if okayCondition model then
+        Just True
+    else if errorCondition model then
+        Just False
+    else
+        Nothing

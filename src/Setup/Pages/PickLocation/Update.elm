@@ -33,6 +33,9 @@ update config game msg model =
         GeoRevResp value ->
             onGeoRevResp config value model
 
+        SetError error ->
+            onSetError error model
+
         ResetLoc ->
             onResetLocation model
 
@@ -101,3 +104,8 @@ onGeoRevResp config value model =
 onResetLocation : Model -> UpdateResponse msg
 onResetLocation model =
     ( setAreaLabel Nothing model, Cmd.none, Dispatch.none )
+
+
+onSetError : String -> Model -> UpdateResponse msg
+onSetError error model =
+    Update.fromModel model

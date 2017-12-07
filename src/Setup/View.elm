@@ -46,7 +46,7 @@ setupView game page model =
     node setupNode
         []
         [ leftBar page model.pages model
-        , viewPage game page
+        , viewPage game page model
         ]
 
 
@@ -65,8 +65,8 @@ leftBar current others model =
             ]
 
 
-viewPage : Game.Model -> PageModel -> Html Msg
-viewPage game page =
+viewPage : Game.Model -> PageModel -> Model -> Html Msg
+viewPage game page model =
     case page of
         WelcomeModel ->
             Welcome.view Configs.welcome
@@ -85,10 +85,10 @@ viewPage game page =
             div [] []
 
         FinishModel ->
-            Finish.view Configs.finish
+            Finish.view Configs.finish <| setupOkay model
 
         CustomFinishModel ->
-            CustomFinish.view Configs.finish
+            CustomFinish.view Configs.finish <| setupOkay model
 
 
 stepMarker : String -> String -> Model -> Html Msg
@@ -100,18 +100,27 @@ stepMarker active other model =
             else
                 []
 
+        ignorePages =
+            [ "WELCOME", "WELCOME AGAIN", "FINISH" ]
+
         pageColor =
-            if hasBadPages model then
+            if not <| List.member other ignorePages then
                 if (isBadPage other model) then
                     [ BadPage ]
-                else
+                else if (isGoodPage other model) then
                     [ DonePage ]
+                else
+                    []
+            else
+                []
+
+        click =
+            if other /= "FINISH" then
+                [ onClick <| GoToPage other ]
             else
                 []
 
         attributes =
-            [ class (isSelected ++ pageColor)
-            , onClick <| GoToPage other
-            ]
+            [ class (isSelected ++ pageColor) ] ++ click
     in
         li attributes [ text other ]

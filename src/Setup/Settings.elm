@@ -5,11 +5,13 @@ module Setup.Settings
         , groupSettings
         , encodeSettings
         , decodeErrors
+        , settingToString
         )
 
-import Dict as Dict
+import Dict exposing (Dict)
 import Json.Encode as Encode exposing (Value)
 import Json.Decode as Decode exposing (Decoder)
+import Json.Decode.Pipeline as Decode
 import Utils.Ports.Map exposing (Coordinates)
 
 
@@ -73,17 +75,30 @@ encodeSettings setting =
         ( key, value )
 
 
-decodeErrors : List Settings -> Decoder (List Settings)
+
+-- Receive a List of settings and check if the settings are valid
+
+
+decodeErrors : List Settings -> Decoder (Dict String String)
 decodeErrors =
     let
-        filter checking errs =
-            List.filter (settingToString >> flip List.member errs) checking
+        filterer errors setting acu =
+            let
+                key =
+                    settingToString setting
+            in
+                case Dict.get key errors of
+                    Just err ->
+                        Dict.insert key err acu
+
+                    Nothing ->
+                        acu
+
+        mapper checking errors =
+            List.foldl (filterer errors) Dict.empty checking
 
         decoder checking =
-            Decode.string
-                |> Decode.list
-                |> Decode.field "fields"
-                |> Decode.map (filter checking)
+            Decode.map (mapper checking) <| Decode.dict Decode.string
     in
         decoder
 

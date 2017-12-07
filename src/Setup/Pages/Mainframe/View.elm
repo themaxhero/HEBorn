@@ -27,9 +27,10 @@ import Game.Models as Game
 import Json.Decode as Decode
 import Setup.Resources exposing (..)
 import Setup.Settings as Settings exposing (Settings)
-import Setup.Pages.Helpers exposing (withHeader)
+import Setup.Pages.Helpers exposing (withHeader, getInputBorderColor, styles)
 import Setup.Pages.Mainframe.Models exposing (..)
 import Setup.Pages.Mainframe.Messages exposing (..)
+import Css.Colors as Colors
 import Setup.Pages.Mainframe.Config exposing (..)
 
 
@@ -42,7 +43,7 @@ view { toMsg, onNext, onPrevious } game model =
     let
         errorStyle =
             styles
-                [ color (rgb 255 0 0)
+                [ color Colors.red
                 , paddingLeft (px 5)
                 ]
 
@@ -79,7 +80,7 @@ view { toMsg, onNext, onPrevious } game model =
                 , error
                 , div []
                     [ input [ type_ "button", value "BACK", onClick onPrevious ] []
-                    , nextBtn onNext toMsg model
+                    , nextBtn model
                     ]
                 ]
             ]
@@ -91,26 +92,12 @@ hostnameInput onNext toMsg model =
         hostName =
             Maybe.withDefault "" (model.hostname)
 
-        statusAttr =
-            if okayCondition model then
-                styles
-                    [ border3 (px 1) solid (rgb 0 255 0)
-                    , marginLeft (px 10)
-                    ]
-            else if errorCondition model then
-                styles
-                    [ border3 (px 1) solid (rgb 255 0 0)
-                    , marginLeft (px 10)
-                    ]
-            else
-                styles [ border2 (px 1) solid, marginLeft (px 10) ]
-
         attrs =
-            [ onInput <| Mainframe >> toMsg --
+            [ onInput <| Mainframe >> toMsg
             , onBlur <| toMsg Validate
             , placeholder "hostname"
             , value hostName
-            , statusAttr
+            , getInputBorderColor <| inputColorCondition model
             ]
     in
         input
@@ -118,25 +105,10 @@ hostnameInput onNext toMsg model =
             []
 
 
-nextBtn : (List Settings -> msg) -> (Msg -> msg) -> Model -> Html msg
-nextBtn onNext toMsg model =
+nextBtn : Model -> Html msg
+nextBtn model =
     let
         attrs =
             [ type_ "submit", value "NEXT" ]
     in
         input attrs []
-
-
-styles : List Css.Style -> Attribute msg
-styles =
-    Css.asPairs >> style
-
-
-okayCondition : Model -> Bool
-okayCondition model =
-    (isOkay model) && not (hasErrorMsg model)
-
-
-errorCondition : Model -> Bool
-errorCondition model =
-    (hasErrorMsg model) && not (isOkay model)

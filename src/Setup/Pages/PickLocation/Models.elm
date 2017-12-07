@@ -8,7 +8,12 @@ type alias Model =
     { coordinates : Maybe Coordinates
     , areaLabel : Maybe String
     , okay : Bool
+    , error : Maybe Error
     }
+
+
+type Error
+    = Unknown
 
 
 mapId : String
@@ -26,6 +31,7 @@ initialModel =
     { coordinates = Nothing
     , areaLabel = Nothing
     , okay = True -- set me to false after backend integration
+    , error = Nothing
     }
 
 
@@ -47,6 +53,11 @@ setAreaLabel areaLabel model =
 
         Nothing ->
             { model | areaLabel = Nothing, okay = False }
+
+
+setError : String -> Model -> Model
+setError error model =
+    model
 
 
 isOkay : Model -> Bool
