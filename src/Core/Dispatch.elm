@@ -18,6 +18,7 @@ module Core.Dispatch
         , emails
         , missions
         , websocket
+        , finances
         , logflix
         , notifications
         )
@@ -138,6 +139,11 @@ websocket =
 notifications : Notifications.Dispatch -> Dispatch
 notifications =
     Notifications >> dispatch
+
+
+finances : Account.Finances -> Dispatch
+finances =
+    Account.Finances >> account
 
 
 logflix : LogFlix.Dispatch -> Dispatch

@@ -13,6 +13,7 @@ module Game.Account.Models
         , getGateway
         , getContext
         , getDatabase
+        , getFinances
         , getBounces
         , getMainframe
         )
@@ -23,6 +24,7 @@ import Game.Account.Database.Models as Database exposing (..)
 import Game.Account.Dock.Models as Dock
 import Game.Account.Bounces.Models as Bounces
 import Game.Account.Inventory.Models as Inventory
+import Game.Account.Finances.Models as Finances
 import Game.Notifications.Models as Notifications
 import Game.Meta.Types.Context exposing (..)
 import Game.Meta.Types.Network exposing (NIP)
@@ -66,6 +68,7 @@ type alias Model =
     , activeGateway : Maybe Servers.CId -- NEVER SET TO "NOTHING" (EXCEPT ON INIT)
     , context : Context
     , bounces : Bounces.Model
+    , finances : Finances.Model
     , inventory : Inventory.Model
     , notifications : Notifications.Model
     , logout : Logout
@@ -90,6 +93,7 @@ initialModel id username token =
     , activeGateway = Nothing
     , context = Gateway
     , bounces = Bounces.initialModel
+    , finances = Finances.initialModel
     , inventory = Inventory.initialModel
     , notifications = Notifications.initialModel
     , logout = StillLogged
@@ -115,6 +119,11 @@ getGateway =
 getContext : Model -> Context
 getContext =
     .context
+
+
+getFinances : Model -> Finances.Model
+getFinances =
+    .finances
 
 
 getDatabase : Model -> Database.Model

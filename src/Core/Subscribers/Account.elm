@@ -7,6 +7,7 @@ import Apps.Messages as Apps
 import Apps.Browser.Messages as Browser
 import Game.Messages as Game
 import Game.Account.Messages as Account
+import Game.Account.Finances.Messages as Finances
 import Game.Account.Database.Messages as Database
 
 
@@ -18,6 +19,9 @@ dispatch dispatch =
 
         SetEndpoint a ->
             [ account <| Account.HandleSetEndpoint a ]
+
+        Finances a ->
+            fromFinances a
 
         SetContext a ->
             [ account <| Account.HandleSetContext a ]
@@ -35,3 +39,16 @@ dispatch dispatch =
 
         Logout ->
             [ account <| Account.HandleLogout ]
+
+
+fromFinances : Finances -> Subscribers
+fromFinances dispatch =
+    case dispatch of
+        BankAccountOpened ( a, b ) ->
+            [ accountFinances <| Finances.HandleBankAccountOpened a b ]
+
+        BankAccountClosed a ->
+            [ accountFinances <| Finances.HandleBankAccountClosed a ]
+
+        BankAccountUpdated ( a, b ) ->
+            [ accountFinances <| Finances.HandleBankAccountUpdated a b ]
