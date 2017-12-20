@@ -79,6 +79,9 @@ update data msg model =
         PublicDownload source file storage ->
             onReqDownload data source file storage model
 
+        Pay type_ value ->
+            onPay data type_ value model
+
         HandlePasswordAcquired event ->
             onEveryTabMsg data (Cracked event.nip event.password) model
 
@@ -154,6 +157,12 @@ onSelectEndpoint model =
 onLogout : Model -> UpdateResponse
 onLogout model =
     -- TODO #285
+    Update.fromModel model
+
+
+onPay : Game.Data -> PaymentType -> Int -> Model -> UpdateResponse
+onPay data type_ value model =
+    --TODO add PaymentType to #347 containing Forfeit and Buy
     Update.fromModel model
 
 

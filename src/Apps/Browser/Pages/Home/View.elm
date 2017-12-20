@@ -32,6 +32,9 @@ view =
                 [ onClick <| GoAddress "fbi.dmy" ]
                 [ text "FBI" ]
             , li
+                [ onClick <| GoAddress "saintandrew.dmy" ]
+                [ text "Bank" ]
+            , li
                 [ onClick <| GoAddress "lulapresoamanha.dmy" ]
                 [ text "News" ]
             ]

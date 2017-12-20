@@ -10,18 +10,36 @@ import Game.Web.Types as Web
 
 
 type alias Model =
-    { title : String
+    { bank : Bank
+    , account : Maybe String
     , password : Maybe String
+    , loggedIn : Bool
     }
 
 
-initialModel : Web.Url -> Web.BankContent -> Model
-initialModel url content =
-    { title = content.title
-    , password = Nothing
+type alias Bank =
+    { id : Servers.Id
+    , name : String
+    , logo : String
     }
+
+
+initialModel : Model
+initialModel =
+    let
+        initialBank =
+            { id = ""
+            , name = ""
+            , logo = ""
+            }
+    in
+        { bank = initialBank
+        , account = Nothing
+        , password = Nothing
+        , loggedIn = False
+        }
 
 
 getTitle : Model -> String
-getTitle { title } =
-    title ++ " Bank"
+getTitle { bank } =
+    bank.name ++ " Bank"

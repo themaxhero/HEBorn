@@ -45,6 +45,7 @@ type alias Model =
 
 type ModalAction
     = ForDownload NIP Filesystem.FileEntry
+    | PaymentMethodSelect
 
 
 name : String

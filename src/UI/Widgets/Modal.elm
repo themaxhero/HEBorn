@@ -2,11 +2,13 @@ module UI.Widgets.Modal
     exposing
         ( modal
         , modalPickStorage
+        , modelSelectPaymentMethod
         , modalOkCancel
         , modalNode
         , overlayNode
         )
 
+import UI.Widgets.CustomSelect exposing (customSelect)
 import Dict exposing (Dict)
 import Html exposing (Html, Attribute, node, div, button, text, h3, span)
 import Html.CssHelpers
@@ -42,6 +44,29 @@ modalPickStorage storages pickResponse =
     in
         modal (Just "Pick a storage")
             "Select where you want to save oswaldo:"
+            btns
+            cancel
+
+
+modelSelectPaymentMethod : BankAccounts -> msg -> Html msg
+modelSelectPaymentMethod accounts payValue pay =
+    let
+        accountsReducer key value acu =
+            ( pay <| Just ( key, payValue ), accountLabel key ) :: acu
+
+        accountBtns =
+            Dict.foldl accountsReducer [] accounts
+
+        btns =
+            accountBtns
+                |> (::) ( pay Nothing, "Cancel" )
+
+        cancel =
+            (Just <| pay Nothing)
+    in
+        modal
+            (Just "Select Payment Method")
+            "Select a Bank Account : "
             btns
             cancel
 
@@ -89,6 +114,21 @@ modal title content buttons fallback =
             node modalNode [] [ overlay fallback, content_ ]
     in
         root
+
+
+accountLabel : AccountId -> BankAccount -> Html msg
+accountLabel id account =
+    let
+        name =
+            account.name
+
+        number =
+            toString <| Tuple.second id
+
+        balance =
+            toMoney (account.balance)
+    in
+        name ++ " : (" ++ number ++ ")" ++ " : USD " ++ balance
 
 
 overlay : Maybe msg -> Html msg

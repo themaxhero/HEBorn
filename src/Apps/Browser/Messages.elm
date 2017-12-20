@@ -24,6 +24,7 @@ type Msg
     | SelectEndpoint
     | Logout
     | PublicDownload Network.NIP Filesystem.FileEntry StorageId
+    | Pay TabMsg
     | HandlePasswordAcquired PasswordAcquired.Data
 
 

@@ -197,6 +197,22 @@ viewPg data { page, modal } =
                 in
                     modalPickStorage storages onPick
 
+            Just (PaymentMethodSelect type_ value) ->
+                let
+                    accounts =
+                        data
+                            |> Game.getGame
+                            |> Game.getAccount
+                            |> Account.getFinances
+                            |> Finances.getBankAccounts
+
+                    onPick chosen =
+                        chosen
+                            |> Maybe.map (Pay type_ value)
+                            |> Maybe.withDefault (ActiveTabMsg <| EnterModal Nothing)
+                in
+                    modalSelectPaymentMethod accounts value
+
             Nothing ->
                 text ""
         ]
