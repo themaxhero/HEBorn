@@ -50,6 +50,20 @@ accountConfigSet id =
 
 
 
+-- bank
+
+
+bankLogin : Account.ID -> Topic
+bankLogin id =
+    WebsocketTopic (AccountChannel id) "bank.login"
+
+
+bankTransfer : Account.ID -> Topic
+bankTransfer id =
+    WebsocketTopic (AccountChannel id) "bank.transfer"
+
+
+
 -- server
 
 

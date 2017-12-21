@@ -1,8 +1,6 @@
 module UI.Widgets.Modal
     exposing
         ( modal
-        , modalPickStorage
-        , modelSelectPaymentMethod
         , modalOkCancel
         , modalNode
         , overlayNode
@@ -13,7 +11,6 @@ import Dict exposing (Dict)
 import Html exposing (Html, Attribute, node, div, button, text, h3, span)
 import Html.CssHelpers
 import Html.Events exposing (onClick)
-import Game.Servers.Models exposing (Storages)
 import OS.SessionManager.WindowManager.Resources exposing (..)
 
 
@@ -23,52 +20,6 @@ import OS.SessionManager.WindowManager.Resources exposing (..)
 wmClass : List class -> Attribute msg
 wmClass =
     .class <| Html.CssHelpers.withNamespace prefix
-
-
-modalPickStorage : Storages -> (Maybe String -> msg) -> Html msg
-modalPickStorage storages pickResponse =
-    let
-        storageReducer key value acu =
-            ( pickResponse <| Just key, value.name ) :: acu
-
-        storagesBtns =
-            Dict.foldr storageReducer [] storages
-
-        btns =
-            storagesBtns
-                |> (::) ( pickResponse Nothing, "Cancel" )
-                |> List.reverse
-
-        cancel =
-            (Just <| pickResponse Nothing)
-    in
-        modal (Just "Pick a storage")
-            "Select where you want to save oswaldo:"
-            btns
-            cancel
-
-
-modelSelectPaymentMethod : BankAccounts -> msg -> Html msg
-modelSelectPaymentMethod accounts payValue pay =
-    let
-        accountsReducer key value acu =
-            ( pay <| Just ( key, payValue ), accountLabel key ) :: acu
-
-        accountBtns =
-            Dict.foldl accountsReducer [] accounts
-
-        btns =
-            accountBtns
-                |> (::) ( pay Nothing, "Cancel" )
-
-        cancel =
-            (Just <| pay Nothing)
-    in
-        modal
-            (Just "Select Payment Method")
-            "Select a Bank Account : "
-            btns
-            cancel
 
 
 modalOkCancel : Maybe String -> String -> msg -> msg -> Html msg

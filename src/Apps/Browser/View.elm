@@ -15,7 +15,8 @@ import Apps.Browser.Pages.Models as Pages
 import Apps.Browser.Pages.View as Pages
 import Apps.Browser.Resources exposing (Classes(..), prefix)
 import UI.Widgets.HorizontalTabs exposing (hzTabs)
-import UI.Widgets.Modal exposing (modalPickStorage)
+import UI.Widgets.PickStorageModal exposing (modalPickStorage)
+import UI.Widgets.SelectPaymentMethod exposing (modalSelectPaymentMethod)
 
 
 { id, class, classList } =

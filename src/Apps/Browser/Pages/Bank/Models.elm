@@ -7,37 +7,40 @@ module Apps.Browser.Pages.Bank.Models
 
 import Game.Meta.Types.Network as Network
 import Game.Web.Types as Web
+import Game.Servers.Shared exposing (Id)
+import Apps.Browser.Pages.Bank.Pages.Login.Models as Login
+import Apps.Browser.Pages.Bank.Pages.MainPage.Models as Main
+import Apps.Browser.Pages.Bank.Pages.Transfer.Models as Transfer
+import Apps.Browser.Pages.Bank.Shared exposing (Bank)
 
 
 type alias Model =
     { bank : Bank
-    , account : Maybe String
-    , password : Maybe String
-    , loggedIn : Bool
+    , login : Login.Model
+    , main : Main.Model
+    , transfer : Transfer.Model
+    , account : Maybe Int
+    , page : Page
+    , url : String
     }
 
 
-type alias Bank =
-    { id : Servers.Id
-    , name : String
-    , logo : String
+type Page
+    = LoginPage
+    | MainPage
+    | TransferPage
+
+
+initialModel : String -> Bank -> Model
+initialModel url bank =
+    { bank = bank
+    , login = Login.initialModel bank
+    , main = Main.initialModel bank
+    , transfer = Transfer.initialModel bank
+    , account = Nothing
+    , page = LoginPage
+    , url = url
     }
-
-
-initialModel : Model
-initialModel =
-    let
-        initialBank =
-            { id = ""
-            , name = ""
-            , logo = ""
-            }
-    in
-        { bank = initialBank
-        , account = Nothing
-        , password = Nothing
-        , loggedIn = False
-        }
 
 
 getTitle : Model -> String
