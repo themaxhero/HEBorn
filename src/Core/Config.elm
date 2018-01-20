@@ -11,8 +11,10 @@ import OS.Toasts.Messages as Toast
 import Apps.Messages as Apps
 import Apps.Browser.Messages as Browser
 import Game.Config as Game
+import Game.Messages as Game
 import Game.Account.Models as Account
-import Game.Servers.Models as Servers
+import Game.Account.Messages as Account
+import Game.Servers.Models as Servers exposing (Server)
 import Game.Servers.Shared exposing (CId)
 import Game.Storyline.Models as Story
 import Core.Flags exposing (Flags)
@@ -79,7 +81,7 @@ gameConfig =
     }
 
 
-setupConfig : String -> Maybe CId -> Flags -> Setup.Config Msg
+setupConfig : String -> CId -> Flags -> Setup.Config Msg
 setupConfig accountId mainframe flags =
     { toMsg = SetupMsg
     , accountId = accountId
@@ -89,15 +91,60 @@ setupConfig accountId mainframe flags =
 
 
 osConfig :
-    Account.Model
-    -> Story.Model
-    -> Time
-    -> Servers.Server
+    Game.Model
+    -> ( CId, Server )
+    -> Context
+    -> ( CId, Server )
     -> OS.Config Msg
-osConfig account story lastTick activeServer =
+osConfig game srv ctx gtw =
     { toMsg = OSMsg
-    , account = account
-    , activeServer = activeServer
-    , story = story
-    , lastTick = lastTick
+    , flags = Game.getFlags game
+    , account = Game.getAccount game
+    , story = Game.getStory game
+    , activeServer = srv
+    , activeContext = ctx
+    , activeGateway = gtw
+    , servers = Gamet.getServers game
+    , lastTick = Meta.getLastTick <| Game.getMeta <| game
+    , onLogout =
+        Account.Logout
+            |> Game.AccountMsg
+            |> GameMsg
+    , onSetGateway =
+        Account.OnSetGateway
+            |> Game.AccountMsg
+            |> GameMsg
+    , onSetEndpoint =
+        Account.OnSetEndpoint
+            |> Game.AccountMsg
+            |> GameMsg
+    , onSetContext =
+        Account.OnSetContext
+            |> Game.AccountMsg
+            |> GameMsg
+    , onSetBounce =
+        \bounce ->
+            Server.OnSetBounce bounce
+                |> Server cid
+                |> ServersMsg
+                |> GameMsg
+    , onSetStoryMode =
+        Storyline.OnSetMode
+            |> StorylineMsg
+            |> GameMsg
+    , onReadAllAccountNotifications =
+        Account.ReadAllNotifications
+            |> Game.AccountMsg
+            |> GameMsg
+    , onReadAllServerNotifications =
+        Server.ReadAllNotifications
+            |> Server
+            >> Game.ServersMsg
+            >> GameMsg
+    , onSetActiveNIP =
+        \nip ->
+            Server.SetActiveNIP nip
+                |> Server cid
+                |> Game.ServersMsg
+                |> GameMsg
     }
