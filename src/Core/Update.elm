@@ -334,11 +334,10 @@ updateLanding :
     -> ( Model, Cmd Msg )
 updateLanding msg model ({ landing } as stateModel) =
     let
-        ( landing_, cmd, dispatch ) =
-            Landing.update model msg landing
-
-        cmd_ =
-            Cmd.map LandingMsg cmd
+        ( landing_, react ) =
+            Landing.update (landingConfig model.windowLoaded model.flags)
+                msg
+                landing
 
         stateModel_ =
             { stateModel | landing = landing_ }
@@ -346,7 +345,7 @@ updateLanding msg model ({ landing } as stateModel) =
         model_ =
             { model | state = Home stateModel_ }
     in
-        dispatcher model_ cmd_ dispatch
+        dispatcher model_ (React.toCmd react) Dispatch.none
 
 
 updateGame : Game.Msg -> Game.Model -> ( Game.Model, Cmd Msg, Dispatch )

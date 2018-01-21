@@ -6,6 +6,7 @@ import Driver.Websocket.Messages as Ws
 import Core.Flags exposing (Flags)
 import Core.Error as Error exposing (Error)
 import Core.Messages exposing (..)
+import Landing.Config as Landing
 import Setup.Config as Setup
 import Game.Config as Game
 import Game.Messages as Game
@@ -85,6 +86,15 @@ gameConfig =
     , onBALoginFailed = (\a -> MultiMsg [])
     , onBATransferSuccess = (\a -> MultiMsg [])
     , onBATransferFailed = (\a -> MultiMsg [])
+    }
+
+
+landingConfig : Bool -> Flags -> Landing.Config Msg
+landingConfig windowLoaded flags =
+    { flags = flags
+    , toMsg = LandingMsg
+    , onLogin = HandleBoot
+    , windowLoaded = windowLoaded
     }
 
 
