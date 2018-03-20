@@ -70,6 +70,9 @@ type_ =
                 "cracker_bruteforce" ->
                     succeed Cracker
 
+                "install_virus" ->
+                    succeed VirusInstall
+
                 "file_download" ->
                     field "data" download
 

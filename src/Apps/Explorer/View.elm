@@ -366,6 +366,7 @@ menuMainArchive ({ menuAttr } as config) storage id =
           , ( ContextMenu.item "Move", config.toMsg <| UpdateEditing (Moving id) )
           , ( ContextMenu.item "Delete", config.onDeleteFile storage id )
           , ( ContextMenu.item "Upload", uploadAction config id storage )
+          , ( ContextMenu.item "Install", installAction config id )
           ]
         ]
 
@@ -610,3 +611,8 @@ uploadAction ({ onUploadFile, batchMsg } as config) id storage =
 
             Nothing ->
                 batchMsg []
+
+
+installAction : Config msg -> Filesystem.Id -> msg
+installAction ({ onInstallFile, batchMsg } as config) id =
+    onInstallFile id

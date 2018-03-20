@@ -15,6 +15,8 @@ import Events.Account.Handlers.BounceCreated as BounceCreated
 import Events.Account.Handlers.BounceUpdated as BounceUpdated
 import Events.Account.Handlers.BounceRemoved as BounceRemoved
 import Events.Account.Handlers.VirusCollected as VirusCollected
+import Events.Account.Handlers.VirusInstalled as VirusInstalled
+import Events.Account.Handlers.VirusInstallFailed as VirusInstallFailed
 import Events.Account.Config exposing (..)
 
 
@@ -62,6 +64,12 @@ events config requestId name value =
 
         "virus_collected" ->
             VirusCollected.handler config.onVirusCollected value
+
+        "virus_installed" ->
+            VirusInstalled.handler config.onVirusInstalled value
+
+        "virus_install_failed" ->
+            VirusInstallFailed.handler config.onVirusInstallFailed value
 
         _ ->
             Err ""

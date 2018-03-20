@@ -26,7 +26,9 @@ import Utils.Json.Decode exposing (optionalMaybe, commonError)
 import Game.Meta.Types.Network exposing (NIP)
 import Game.Shared exposing (ID)
 import Game.Account.Database.Models exposing (..)
+import Game.Servers.Filesystem.Shared exposing (File)
 import Game.Account.Finances.Models exposing (AccountNumber)
+import Decoders.Filesystem exposing (file)
 
 
 database : Decoder Model
@@ -141,3 +143,10 @@ virusCollected =
         |> required "money" int
         |> required "file_id" string
         |> required "nip" nip
+
+
+virusInstalled : Decoder ( File, Virus )
+virusInstalled =
+    decode (,)
+        |> custom file
+        |> custom virus

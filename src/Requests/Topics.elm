@@ -221,3 +221,8 @@ bounceRemove id =
 virusCollect : Account.ID -> Topic
 virusCollect id =
     WebsocketTopic (AccountChannel id) "virus.collect"
+
+
+virusInstall : Account.ID -> Topic
+virusInstall id =
+    WebsocketTopic (AccountChannel id) "file.install"

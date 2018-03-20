@@ -43,6 +43,7 @@ type
     | Download DownloadContent
     | Upload UploadContent
     | VirusCollect
+    | VirusInstall
 
 
 type alias EncryptorContent =
